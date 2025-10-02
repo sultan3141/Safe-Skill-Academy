@@ -6,6 +6,9 @@ from rest_framework import generics, response
 from rest_framework.permissions import AllowAny
 from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework import status
+from django.core.mail import EmailMultiAlternatives
+from django.template.loader import render_to_string
+import random
 
 
 class MyTokenObtainPairView(TokenObtainPairView):
@@ -38,7 +41,21 @@ class PasswordRestEmailVerifyView(generics.GenericAPIView):
             user.save()
 
             link=f"http://localhost:5173/create-new-password/?otp={user.otp}&uuidb64={uuid64}=refresh_token{refresh_token}"
+            merge_data={
+                "link":link
+                "username":user.username
+            }
+            subject="password Rest Email"
+            text_body=render_to_string("email/password_reset.txt", merge_data)
+            html_body=render_to_string("email/password_reset.html", merge_data)
+            
             print("link======",link)
+            msg=EmailMultiAlternatives(
+                subject=subject,
+                from_email=""
+            )
+
+
          return user   
 class PasswordChangeView(generics.GenericAPIView):
     permission_classes = [AllowAny]
