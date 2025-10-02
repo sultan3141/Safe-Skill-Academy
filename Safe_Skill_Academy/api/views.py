@@ -20,7 +20,7 @@ def generate_random_otp(length=6):
 
 class PasswordRestEmailVerifyView(generics.GenericAPIView):
      permission_classes = [AllowAny]
-     serializer_class = PasswordRestEmailVerifySerializer
+     serializer_class = api_serializer.UserSerializer
      def get_object(self):
          email=self.kwargs['email']
 
@@ -37,4 +37,4 @@ class PasswordRestEmailVerifyView(generics.GenericAPIView):
 
             link=f"http://localhost:5173/create-new-password/?otp{user.otp}&uuidb64={uuid64}/"
             print("link======",link)
-        return user   
+         return user   
