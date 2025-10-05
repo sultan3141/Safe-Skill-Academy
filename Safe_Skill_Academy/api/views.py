@@ -108,4 +108,25 @@ class StudentSummeryAPIView(generics.RetrieveAPIView):
     def list(self, request, *args, **kwargs):
         queryset = self.get_queryset()
         serializer = self.get_serializer(queryset, many=True)
-        return Response(serializer.data)   
+        return Response(serializer.data) 
+
+class StudentCourseListAPIView(generics.ListAPIView):
+    permission_classes = [AllowAny]
+    serializer_class = api_serializer.EnrolledCourseSerializer
+
+    def get_queryset(self):
+        user_id=self.kwargs['user_id']
+        user=User.objects.get(id=user_id)
+        return EnrolledCourse.objects.filter(user=user).order_by('-enrolled_at')  
+
+class StudentCourseDetailAPIView(generics.RetrieveAPIView):
+    permission_classes = [AllowAny]
+    serializer_class = api_serializer.EnrolledCourseSerializer
+    lookup_field = 'enrolled_id'
+
+    def get_queryset(self):
+        user_id=self.kwargs['user_id']
+        enrolled_id=self.kwargs['enrollment_id']
+        user=User.objects.get(id=user_id)
+        enrollment_id=EnrolledCourse.objects.get(enrolled_id=enrolled_id)
+        return EnrolledCourse.objects.filter(user=user, course=course)

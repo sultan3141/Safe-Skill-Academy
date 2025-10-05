@@ -29,5 +29,8 @@ urlpatterns = [
     path('', include(router.urls)),
     #student api endpoint
     path('student/summery/<user_id>/', api_views.StudentSummeryAPIView.as_view(), name='student-summery'),
+    path('student/course-list/<user_id>/', api_views.StudentCourseListAPIView.as_view(), name='student-courses'),
+    path('student/course-detail/<user_id>/<enrollment_id>/', api_views.StudentCourseDetailAPIView.as_view(), name='student-course-detail'),       
+
 
 ]
