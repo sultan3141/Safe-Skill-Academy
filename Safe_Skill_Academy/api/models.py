@@ -158,4 +158,84 @@ class Question_Answer_Massage(models.Model):
 
      def Profile(self):
         return Profile.objects.get(user=self.user)  
+class CompletedCourse(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    course = models.ForeignKey(Course, on_delete=models.CASCADE)
+    completed_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return self.course.title
+
+class EnrolledCourse(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    course = models.ForeignKey(Course, on_delete=models.CASCADE)
+    enrolled_at = models.DateTimeField(auto_now_add=True)
+    progress = models.FloatField(default=0.0)  # percentage of course completed
+    teacher=models.ForeignKey(Teacher, on_delete=models.CASCADE)
+    enrolled_id=ShortUUIDField(max_length=20, unique=True, editable=False)
+
+    def __str__(self):
+        return self.course.title
+
+    def lectures(self):
+      return VariantItem.objects.filter(variant_course=self.course)
+    
+    def completed_lectures(self):
+      return CompletedLecture.objects.filter(user=self.user, course=self.course)
+    
+    def curriculum(self):
+      return VariantItem.objects.filter(course=self.course)
+
+    def note(self):
+      return Note.objects.filter(user=self.user, course=self.course) 
+
+    def review(self):
+      return Review.objects.filter(user=self.user, course=self.course).frist()
+
+class Note(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    course = models.ForeignKey(Course, on_delete=models.CASCADE)
+    title = models.CharField(max_length=200)
+    note = models.TextField()
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    note_id=ShortUUIDField(max_length=20, unique=True, editable=False)  
+
+    def __str__(self):
+        return self.title
+
+class Review(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    course = models.ForeignKey(Course, on_delete=models.CASCADE)
+    review=models.CharField(max_length=200)
+    rating = models.PositiveIntegerField()
+    active = models.BooleanField(default=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    review_id=ShortUUIDField(max_length=20, unique=True, editable=False)  
+
+    def __str__(self):
+        return self.review
+
+    def Profile(self):
+      return Profile.objects.get(user=self.user)
+
+class Notification(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    message = models.CharField(max_length=255)
+    teacher=models.ForeignKey(Teacher, on_delete=models.CASCADE, null=True, blank=True)
+    review=models.ForeignKey(Review, on_delete=models.CASCADE, null=True, blank=True)
+    is_read = models.BooleanField(default=False)
+    created_at = models.DateTimeField(auto_now_add=True)
+    type=models.CharField(max_length=100, null=True, blank=True)
+
+    def __str__(self):
+        return self.type
+
+class country(models.Model):
+    name = models.CharField(max_length=100)
+    active = models.BooleanField(default=True)
+
+    def __str__(self):
+        return self.name
 
