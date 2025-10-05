@@ -2,7 +2,12 @@ from rest_framework import serializers
 from userauths.models import User, Profile
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 from django.contrib.auth.password_validation import validate_password
-
+from .models import (
+    Teacher, Category, Course, Variant, VariantItem,
+    Question_Answer, Question_Answer_Massage,
+    CompletedCourse, EnrolledCourse, Note, Review,
+    Notification, country
+)
 
 class MyTokenObtainPairSerializer(TokenObtainPairSerializer):
     @classmethod
@@ -46,3 +51,70 @@ class RegisterSerializer(serializers.ModelSerializer):
        user.save() 
        
        return user
+
+
+
+class TeacherSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Teacher
+        fields = '__all__'
+
+class CategorySerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Category
+        fields = '__all__'
+
+class CourseSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Course
+        fields = '__all__'
+
+class VariantSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Variant
+        fields = '__all__'
+
+class VariantItemSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = VariantItem
+        fields = '__all__'
+
+class QuestionAnswerSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Question_Answer
+        fields = '__all__'
+
+class QuestionAnswerMassageSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Question_Answer_Massage
+        fields = '__all__'
+
+class CompletedCourseSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = CompletedCourse
+        fields = '__all__'
+
+class EnrolledCourseSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = EnrolledCourse
+        fields = '__all__'
+
+class NoteSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Note
+        fields = '__all__'
+
+class ReviewSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Review
+        fields = '__all__'
+
+class NotificationSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Notification
+        fields = '__all__'
+
+class CountrySerializer(serializers.ModelSerializer):
+    class Meta:
+        model = country
+        fields = '__all__'
