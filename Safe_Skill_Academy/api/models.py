@@ -124,3 +124,38 @@ class VariantItem(models.Model):
 
     def __str__(self):
         return f"{self.variant.title} - {self.title}"
+class Question_Answer(models.Model):
+    course = models.ForeignKey(Course, on_delete=models.CASCADE)
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    title = models.CharField(max_length=200)
+    qa_id=ShortUUIDField(max_length=20, unique=True, editable=False)
+    date=models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"{ self.user.username} - {self.course.title}"
+
+    class Meta:
+        ordering = ['-date'] 
+
+    def massages(self):
+      return Question_Answer_Massage.objects.filter(question=self)  
+    def Profile(self):
+      return Profile.objects.get(user=self.user)
+
+class Question_Answer_Massage(models.Model):
+     course=models.ForeignKey(Course, on_delete=models.CASCADE)
+     question=models.ForeignKey(Question_Answer, on_delete=models.CASCADE)
+     user=models.ForeignKey(User, on_delete=models.CASCADE)
+     massage=models.TextField()
+     qam_id=ShortUUIDField(max_length=20, unique=True, editable=False)
+     date = models.DateTimeField(auto_now_add=True)
+
+     def __str__(self):
+        return f"{ self.user.username} - {self.course.title}"
+
+     class Meta:
+        ordering = ['date']   
+
+     def Profile(self):
+        return Profile.objects.get(user=self.user)  
+
