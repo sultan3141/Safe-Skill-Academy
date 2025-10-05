@@ -50,6 +50,7 @@ class Category(models.Model):
             self.slug = slugify(self.title)
         super(Category,self).save(*args, **kwargs)        
 
+
 class Course(models.Model):
     category = models.ForeignKey(Category, on_delete=models.CASCADE, related_name='courses')
     teacher = models.ForeignKey(Teacher, on_delete=models.CASCADE, related_name='courses')
@@ -60,7 +61,11 @@ class Course(models.Model):
     language = models.CharField(max_length=50, choices=language, default="English")
     level = models.CharField(max_length=50, choices=Level, default="Beginner")
     platform_status = models.CharField(max_length=50, choices=Platform_Status, default="Free")
-    course_id=ShortUUIDField(length=6, max_length=20, prefix="CRS", alphabet="1234567890", unique=True, editable=False)
+    course_id = ShortUUIDField(
+        max_length=22,  # default length
+        unique=True,
+        editable=False
+    )
     slug = models.SlugField(unique=True)
     date=models.DateTimeField(auto_now_add=True)
     
@@ -71,3 +76,51 @@ class Course(models.Model):
         if self.slug =='' or self.slug == None:
             self.slug = slugify(self.title)
         super(Category,self).save(*args, **kwargs)
+    def students(self):
+      return EnrolledCourse.objects.filter(course=self)
+
+    def curriculum(self):
+      return VariantItem.objects.filter(course=self)
+
+    def lactures(self):
+      return VariantItem.objects.filter(course=self)
+
+    def average_rating(self):
+       average_rating=Review.objects.filter(course=self).aggregate(avg_rating=models.AVG('rating'))
+       return average_rating['avg_rating']
+
+    def rating_count(self):
+       return Review.objects.filter(course=self, active=True).count()  
+
+    def reviews(self):
+       return Review.objects.filter(course=self, active=True)
+
+class Variant(models.Model):
+    course = models.ForeignKey(Course, on_delete=models.CASCADE)
+    title = models.CharField(max_length=200)
+    variant_id=ShortUUIDField(max_length=20, unique=True, editable=False)
+    date=models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return self.title
+
+    def Variant_items(self):
+          return VariantItem.objects.filter(variant=self)
+
+
+
+class VariantItem(models.Model):
+    variant = models.ForeignKey("Variant", on_delete=models.CASCADE)
+    file = models.FileField(upload_to="course-file")
+    title = models.CharField(max_length=200)
+    description = models.TextField()
+    content_duration = models.DurationField(null=True, blank=True)
+    duration = models.DurationField(null=True, blank=True)
+    preview = models.BooleanField(default=False)
+    variant_item_id = ShortUUIDField(
+        max_length=20, unique=True, editable=False
+    )
+    date = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"{self.variant.title} - {self.title}"
