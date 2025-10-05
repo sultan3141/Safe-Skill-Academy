@@ -94,10 +94,7 @@ class CompletedCourseSerializer(serializers.ModelSerializer):
         model = CompletedCourse
         fields = '__all__'
 
-class EnrolledCourseSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = EnrolledCourse
-        fields = '__all__'
+
 
 class NoteSerializer(serializers.ModelSerializer):
     class Meta:
@@ -117,4 +114,52 @@ class NotificationSerializer(serializers.ModelSerializer):
 class CountrySerializer(serializers.ModelSerializer):
     class Meta:
         model = country
+        fields = '__all__'
+class EnrolledCourseSerializer(serializers.ModelSerializer):
+    lectures = VariantItemSerializer(many=True, read_only=True)
+    completed_lectures = VariantItemSerializer(many=True, read_only=True)
+    curriculum = VariantItemSerializer(many=True, read_only=True)
+    note = NoteSerializer(many=True, read_only=True)
+    question_answer = QuestionAnswerSerializer(many=True, read_only=True)
+    review = ReviewSerializer(read_only=True)   
+    
+    class Meta:
+        model = EnrolledCourse
+        fields = '__all__'
+
+    def __init__(self, *args, **kwargs):
+        super(EnrolledCourseSerializer.self).__init__(*args, **kwargs)
+        request = self.context.get('request')
+        if request and request.method=='post':
+          self.Meta.depth=0
+        else:
+          self.Meta.depth=1
+class CourseSerializer(serializers.ModelSerializer):
+    teacher = TeacherSerializer(read_only=True)
+    category = CategorySerializer(read_only=True)
+    students = serializers.IntegerField(source='students', read_only=True)
+    curriculum = VariantItemSerializer(many=True, read_only=True)
+    lactures = serializers.IntegerField(source='lactures', read_only=True)
+    average_rating = serializers.FloatField(source='average_rating', read_only=True)
+    rating_count = serializers.IntegerField(source='rating_count', read_only=True)
+    reviews = ReviewSerializer(many=True, read_only=True)
+
+    class Meta:
+        model = Course
+        fields = '__all__'
+
+    def __init__(self, *args, **kwargs):
+        super(CourseSerializer.self).__init__(*args, **kwargs)
+        request = self.context.get('request')
+        if request and request.method=='post':
+          self.Meta.depth=0
+        else:
+          self.Meta.depth=1          
+
+class StudentSummerySerializer(serializers.ModelSerializer):
+    total_courses = serializers.SerializerMethodField()
+    completed_courses = serializers.SerializerMethodField()
+  
+    class Meta:
+        model = Teacher
         fields = '__all__'

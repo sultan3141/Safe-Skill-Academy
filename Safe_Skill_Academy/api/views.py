@@ -90,3 +90,22 @@ class NotificationViewSet(viewsets.ModelViewSet):
 class CountryViewSet(viewsets.ModelViewSet):
     queryset = country.objects.all()
     serializer_class = CountrySerializer
+
+class StudentSummeryAPIView(generics.RetrieveAPIView):
+    permission_classes = [AllowAny]
+    serializer_class = api_serializer.StudentSummerySerializer
+
+    def queryset(self):
+        user_id=self.kwargs['user_id']
+        user=User.objects.get(id=user_id)
+
+        total_courses=EnrolledCourse.objects.filter(user=user).count()
+        completed_courses=CompletedCourse.objects.filter(user=user).count()
+        return [{
+            "total_courses":total_courses,
+            "completed_courses":completed_courses,
+        }]
+    def list(self, request, *args, **kwargs):
+        queryset = self.get_queryset()
+        serializer = self.get_serializer(queryset, many=True)
+        return Response(serializer.data)   
