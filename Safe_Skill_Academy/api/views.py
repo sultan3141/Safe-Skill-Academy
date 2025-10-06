@@ -157,6 +157,14 @@ class StudentCourseCompletedCreateAPIView(CreateAPIView):
 class StudentNoteCreateAPIView(generics.CreateAPIView):
     serializer_class = NoteSerializer
     permission_classes=[AllowAny]
+
+    def get_queryset(self):
+        user_id=self.kwargs['user_id']
+        enrollment_id=self.kwargs['enrollment_id']
+        
+        user=User.objects.get(user_id=user_id)
+        enrolled=EnrolledCourse.objects.get(enrollment_id=enrollment_id)
+        return Note.objects.filter(user=user,enrollment=enrolled)
     
     def create(self, request, *args, **kwargs):
         user_id=request.data['user_id']
@@ -182,4 +190,34 @@ class StudentNoteDetailAPIView(generics.RetrieveAPIView):
         user=User.objects.get(user_id=user_id)
         enrolled=EnrolledCourse.objects.get(enrollment_id=enrollment_id) 
         note=Note.objects.get(user=user,enrollment=enrolled)
-        return note                 
+        return note  
+
+class StudentRateCourseCreateAPIView(generics.CreateAPIView):
+    serializer_class = RateCourseSerializer
+    permission_classes=[AllowAny]
+    
+    def create(self, request, *args, **kwargs):
+        user_id=request.data['user_id']
+        course_id=request.data['course_id']
+        rating=request.data['rating']
+        review=request.data['review']
+        
+        user=User.objects.get(user_id=user_id)
+        course=Course.objects.get(course_id=course_id) 
+        
+        Review.objects.create(user=user,course=course,rating=rating,review=review,active=True)
+        return Response({"message":"Course rated successfully"},status=status.HTTP_201_CREATED)
+            
+   
+class StudentRateCourseUpdateAPIView(generics.RetrieveUpdateAPIView):
+    serializer_class = ReviewSerializer
+    permission_classes=[AllowAny]
+    
+    def get_object(self):
+        user_id=self.kwargs['user_id']
+        review_id=self.kwargs['review_id']
+        
+        user=User.objects.get(user_id=user_id)
+        return Review.objects.get(user=user,review_id=review_id)
+        
+

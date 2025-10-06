@@ -32,6 +32,10 @@ urlpatterns = [
     path('student/course-list/<user_id>/', api_views.StudentCourseListAPIView.as_view(), name='student-courses'),
     path('student/course-detail/<user_id>/<enrollment_id>/', api_views.StudentCourseDetailAPIView.as_view(), name='student-course-detail'),
     path('student/course-completed/', api_views.StudentCourseCompletedCreateAPIView.as_view(), name='student-course-completed'),
-
+    path('student/course-Note-create/', api_views.StudentNoteCreateAPIView.as_view(), name='student-course-create'),
+    path('student/course-Note-detail/', api_views.StudentNoteDetailAPIView.as_view(), name='student-course-detail'),
+    path('student/rate-course/', api_views.StudentRateCourseCreateAPIView.as_view(), name='student-course-rate'),
+    path('student/review-detail/', api_views.StudentRateCourseUpdateAPIView.as_view(), name='student-course-rate-detail'),
+ 
 
 ]
