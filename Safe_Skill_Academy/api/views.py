@@ -16,7 +16,7 @@ from .models import (
 )
 from .serializer import (
     TeacherSerializer, CategorySerializer, CourseSerializer, VariantSerializer, VariantItemSerializer,
-    QuestionAnswerSerializer, QuestionAnswerMassageSerializer,
+    QuestionAnswerSerializer, RateCourseSerializer, QuestionAnswerMassageSerializer,
     CompletedCourseSerializer, EnrolledCourseSerializer, NoteSerializer, ReviewSerializer,
     NotificationSerializer, CountrySerializer
 )

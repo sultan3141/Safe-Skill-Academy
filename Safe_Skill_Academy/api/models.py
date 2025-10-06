@@ -232,6 +232,26 @@ class Notification(models.Model):
     def __str__(self):
         return self.type
 
+class Wishlist(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    course = models.ForeignKey(Course, on_delete=models.CASCADE)
+
+    def __str__(self):
+        return self.user        
+
+class CourseRating(models.Model):
+    course = models.ForeignKey(Course, on_delete=models.CASCADE, related_name='ratings')
+    student = models.ForeignKey(User, on_delete=models.CASCADE)
+    rating = models.PositiveIntegerField()  # e.g., 1 to 5
+    review = models.TextField(blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        unique_together = ('course', 'student')  # one rating per student per course
+
+    def __str__(self):
+        return f"{self.student} rated {self.course} - {self.rating}"
+        
 class country(models.Model):
     name = models.CharField(max_length=100)
     active = models.BooleanField(default=True)

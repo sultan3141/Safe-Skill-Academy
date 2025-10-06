@@ -4,7 +4,7 @@ from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 from django.contrib.auth.password_validation import validate_password
 from .models import (
     Teacher, Category, Course, Variant, VariantItem,
-    Question_Answer, Question_Answer_Massage,
+    Question_Answer, CourseRating, Question_Answer_Massage,
     CompletedCourse, EnrolledCourse, Note, Review,
     Notification, country
 )
@@ -163,3 +163,8 @@ class StudentSummerySerializer(serializers.ModelSerializer):
     class Meta:
         model = Teacher
         fields = '__all__'
+
+class RateCourseSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = CourseRating
+        fields = ['course', 'student', 'rating', 'review']
