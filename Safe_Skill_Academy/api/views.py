@@ -4,6 +4,8 @@ from rest_framework.response import Response
 from rest_framework_simplejwt.views import TokenObtainPairView
 from userauths.models import User
 import random
+from rest_framework.generics import CreateAPIView
+
 
 from api import serializer as api_serializer
 from .models import (
@@ -130,3 +132,25 @@ class StudentCourseDetailAPIView(generics.RetrieveAPIView):
         user=User.objects.get(id=user_id)
         enrollment_id=EnrolledCourse.objects.get(enrolled_id=enrolled_id)
         return EnrolledCourse.objects.filter(user=user, course=course)
+
+class StudentCourseCompletedCreateAPIView(CreateAPIView):
+    serializer_class =CompletedCourseSerializer
+    permission_classes=[AllowAny]
+    
+    def create(self, request, *args, **kwargs):
+        course_id= request.data.get('course_id')
+        user_id= request.data.get('student_id')
+        variant_item_id= request.data.get('variant_item_id')
+        
+        user= User.objects.get(id=user_id)
+        course= Course.objects.get(id=course_id)
+        variant_item= VariantItem.objects.get(variant_item_id=variant_item_id)
+        
+        completed_lessons= CourseLesson.objects.filter(user=user, course=course, variant_item=variant_item).first()
+        if completed_lessons:
+            completed_lessons.delete()
+            return Response({'detail': 'Course already marked as completed.'})
+        else:
+            CourseLesson.objects.create(user=user, course=course, variant_item=variant_item)
+            return Response({'detail': 'Course marked as completed.'})
+        
