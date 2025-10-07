@@ -66,10 +66,10 @@ class CategorySerializer(serializers.ModelSerializer):
         model = Category
         fields = '__all__'
 
-class CourseSerializer(serializers.ModelSerializer):
+'''class CourseSerializer(serializers.ModelSerializer):
     class Meta:
         model = Course
-        fields = '__all__'
+        fields = '__all__'''
 
 class VariantSerializer(serializers.ModelSerializer):
     class Meta:
@@ -214,3 +214,61 @@ class EnrollmentRequestListSerializer(serializers.ModelSerializer):
         fields = ('request_id', 'student', 'student_username', 'course', 'course_title', 'teacher_name',
                   'payment_slip', 'status', 'teacher_note', 'reviewed_by', 'created_at', 'updated_at')
         read_only_fields = ('status', 'teacher_note', 'reviewed_by', 'created_at', 'updated_at')
+
+# api/serializers.py (append)
+
+from rest_framework import serializers
+from .models import Course, CourseMaterial, Teacher, Category
+
+class CourseCreateUpdateSerializer(serializers.ModelSerializer):
+    # teacher is read-only: set in view from request.user -> Teacher
+    teacher = serializers.PrimaryKeyRelatedField(read_only=True)
+    category = serializers.PrimaryKeyRelatedField(queryset=Category.objects.all())
+
+    class Meta:
+        model = Course
+        fields = (
+            'id', 'category', 'teacher', 'title', 'description',
+            'image', 'price', 'language', 'level', 'platform_status',
+            'course_id', 'slug', 'date'
+        )
+        read_only_fields = ('course_id', 'slug', 'date', 'teacher')
+
+class CourseSerializer(serializers.ModelSerializer):
+    teacher_full_name = serializers.CharField(source='teacher.full_name', read_only=True)
+    category_title = serializers.CharField(source='category.title', read_only=True)
+
+    class Meta:
+        model = Course
+        fields = '__all__'
+        read_only_fields = ('course_id', 'slug', 'date')
+
+class CourseMaterialSerializer(serializers.ModelSerializer):
+    teacher = serializers.PrimaryKeyRelatedField(read_only=True)
+    course_title = serializers.CharField(source='course.title', read_only=True)
+
+    class Meta:
+        model = CourseMaterial
+        fields = (
+            'material_id', 'course', 'course_title', 'teacher',
+            'title', 'description', 'video', 'pdf', 'image', 'note',
+            'created_at', 'updated_at'
+        )
+        read_only_fields = ('material_id', 'teacher', 'created_at', 'updated_at')
+
+    def validate(self, data):
+        # ensure at least one of the content fields is provided
+        if not (data.get('video') or data.get('pdf') or data.get('image') or (data.get('note') and data.get('note').strip())):
+            raise serializers.ValidationError("Please provide at least one of: video, pdf, image, or note.")
+        return data
+
+    def create(self, validated_data):
+        request = self.context.get('request')
+        teacher = Teacher.objects.get(user=request.user)
+        course = validated_data.get('course')
+        # ensure teacher owns the course
+        if course.teacher != teacher:
+            raise serializers.ValidationError("You can only add materials to your own courses.")
+        validated_data['teacher'] = teacher
+        return super().create(validated_data)
+

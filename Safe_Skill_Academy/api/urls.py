@@ -7,6 +7,10 @@ from .views import (
     StudentEnrollmentRequestListAPIView,
     TeacherEnrollmentRequestListAPIView,
     TeacherEnrollmentRequestUpdateAPIView,
+    CourseCreateAPIView,
+    CourseRetrieveUpdateDestroyAPIView,
+    CourseMaterialListCreateAPIView,
+    CourseMaterialDetailAPIView,
 )
 # Router for model APIs
 router = DefaultRouter()
@@ -53,6 +57,13 @@ urlpatterns = [
     path('teacher/review-list/<int:teacher_id>/', api_views.TeacherReviewListAPIView.as_view(), name='teacher-review-list'),
     path('teacher/review-detail/<int:teacher_id>/<int:review_id>/', api_views.TeacherReviewDetailAPIView.as_view(), name='teacher-review-detail'),
     path('teacher/student-list/<int:teacher_id>/', api_views.TeacherStudentListAPIView.as_view({'get':'list'}), name='teacher-student-list'), 
+    path('teacher/courses/create/', CourseCreateAPIView.as_view(), name='teacher-course-create'),
+    path('teacher/courses/<int:pk>/', CourseRetrieveUpdateDestroyAPIView.as_view(), name='teacher-course-detail'),
+
+     # Course materials (list/create own materials; filter by ?course=<id>)
+    path('teacher/materials/', CourseMaterialListCreateAPIView.as_view(), name='teacher-materials-list-create'),
+    path('teacher/materials/<str:material_id>/', CourseMaterialDetailAPIView.as_view(), name='teacher-materials-detail'),
+
 
 
 ]

@@ -10,7 +10,13 @@ from .serializer import EnrollmentRequestCreateSerializer, EnrollmentRequestList
 from .permissions import IsTeacher, IsOwnerOrTeacher
 from django.shortcuts import get_object_or_404
 from django.db import transaction
+from rest_framework import generics, permissions, status
+from django.shortcuts import get_object_or_404
+from rest_framework.exceptions import PermissionDenied
 
+from .models import CourseMaterial, Teacher
+from .serializer import CourseCreateUpdateSerializer, CourseMaterialSerializer, CourseSerializer
+from .permissions import IsTeacherOrAdmin, IsCourseOwnerOrAdmin
 from api import serializer as api_serializer
 from .models import (
     Teacher, Category, Course, Variant, VariantItem,
@@ -355,4 +361,79 @@ class TeacherStudentListAPIView(viewsets.ViewSet):
                 students.append(student)
                 unique_student_ids.add(course.user_id)
         return Response(students)
-    
+
+
+
+# Teacher: Create Course
+class CourseCreateAPIView(generics.CreateAPIView):
+    serializer_class = CourseCreateUpdateSerializer
+    permission_classes = [permissions.IsAuthenticated, IsTeacherOrAdmin]
+    queryset = Course.objects.all()
+
+    def perform_create(self, serializer):
+        # get Teacher instance for current user
+        try:
+            teacher = Teacher.objects.get(user=self.request.user)
+        except Teacher.DoesNotExist:
+            raise PermissionDenied("Only teachers can create courses.")
+        serializer.save(teacher=teacher)
+
+# Teacher: Retrieve / Update (partial ok) / Delete their course
+class CourseRetrieveUpdateDestroyAPIView(generics.RetrieveUpdateDestroyAPIView):
+    queryset = Course.objects.all()
+    serializer_class = CourseCreateUpdateSerializer
+    permission_classes = [permissions.IsAuthenticated, IsCourseOwnerOrAdmin]
+
+    # object-level permission uses IsCourseOwnerOrAdmin.has_object_permission
+
+    def perform_update(self, serializer):
+        # Ensure teacher cannot change owner field
+        instance = serializer.instance
+        # If user is not admin, ensure user is the owner
+        if not self.request.user.is_staff:
+            teacher = get_object_or_404(Teacher, user=self.request.user)
+            if instance.teacher != teacher:
+                raise PermissionDenied("You do not have permission to edit this course.")
+            serializer.save(teacher=instance.teacher)
+        else:
+            serializer.save()
+
+# Teacher + Admin: List / Create materials and filter by course via ?course=<id>
+class CourseMaterialListCreateAPIView(generics.ListCreateAPIView):
+    serializer_class = CourseMaterialSerializer
+    permission_classes = [permissions.IsAuthenticated, IsTeacherOrAdmin]
+
+    def get_queryset(self):
+        qs = CourseMaterial.objects.all().select_related('course', 'teacher')
+        # if teacher (non-staff) only return own materials
+        if not self.request.user.is_staff:
+            teacher = get_object_or_404(Teacher, user=self.request.user)
+            qs = qs.filter(teacher=teacher)
+        # optional filter by course id -> ?course=123
+        course_id = self.request.query_params.get('course')
+        if course_id:
+            qs = qs.filter(course_id=course_id)
+        return qs
+
+    def perform_create(self, serializer):
+        teacher = get_object_or_404(Teacher, user=self.request.user)
+        course = serializer.validated_data.get('course')
+        if course.teacher != teacher:
+            raise PermissionDenied("You can only add materials to your own courses.")
+        serializer.save(teacher=teacher)
+
+# Teacher/Admin: Retrieve / Update / Delete a material
+class CourseMaterialDetailAPIView(generics.RetrieveUpdateDestroyAPIView):
+    queryset = CourseMaterial.objects.all()
+    serializer_class = CourseMaterialSerializer
+    permission_classes = [permissions.IsAuthenticated, IsCourseOwnerOrAdmin]
+    lookup_field = 'material_id'
+
+    def perform_update(self, serializer):
+        obj = self.get_object()
+        # only owner or staff allowed (IsCourseOwnerOrAdmin already checks)
+        if not self.request.user.is_staff and obj.teacher.user != self.request.user:
+            raise PermissionDenied("You may not edit this material.")
+        # keep teacher field unchanged
+        serializer.save(teacher=obj.teacher)
+

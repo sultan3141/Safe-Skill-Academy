@@ -4,6 +4,7 @@ from userauths.models import User, Profile  # if you use custom user model
 from django.utils import timezone
 from shortuuidfield import ShortUUIDField
 from django.db import transaction
+from django.core.exceptions import ValidationError
 
 language=(("English","English"),("Amharic","Amharic"),("Oromifa","Oromifa"),)
 Level=(("Beginner","Beginner"),("Intermediate","Intermediate"),("Advanced","Advanced"),)
@@ -107,6 +108,33 @@ class Variant(models.Model):
     def Variant_items(self):
           return VariantItem.objects.filter(variant=self)
 
+
+class CourseMaterial(models.Model):
+    course = models.ForeignKey(Course, on_delete=models.CASCADE, related_name='materials')
+    teacher = models.ForeignKey(Teacher, on_delete=models.CASCADE, related_name='materials')
+    title = models.CharField(max_length=255)
+    description = models.TextField(blank=True, null=True)
+    video = models.FileField(upload_to='course_materials/videos/', null=True, blank=True)
+    pdf = models.FileField(upload_to='course_materials/pdfs/', null=True, blank=True)
+    image = models.ImageField(upload_to='course_materials/images/', null=True, blank=True)
+    note = models.TextField(blank=True, null=True)  # textual note/summary
+    material_id = ShortUUIDField(max_length=20, unique=True, editable=False)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ['-created_at']
+
+    def __str__(self):
+        return f"{self.title} ({self.course.title})"
+
+    def clean(self):
+        # ensure material.teacher matches course.teacher
+        if self.teacher and self.course and self.teacher != self.course.teacher:
+            raise ValidationError("Material teacher must be the same as the course teacher.")
+        # ensure at least one attachment or note
+        if not (self.video or self.pdf or self.image or (self.note and self.note.strip())):
+            raise ValidationError("Provide at least one of: video, pdf, image or note.")
 
 
 class VariantItem(models.Model):
