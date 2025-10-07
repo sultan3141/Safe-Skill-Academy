@@ -8,6 +8,7 @@ from .models import (
     CompletedCourse, EnrolledCourse, Note, Review,
     Notification, country
 )
+from .models import EnrollmentRequest
 
 class MyTokenObtainPairSerializer(TokenObtainPairSerializer):
     @classmethod
@@ -168,3 +169,39 @@ class RateCourseSerializer(serializers.ModelSerializer):
     class Meta:
         model = CourseRating
         fields = ['course', 'student', 'rating', 'review']
+
+
+
+class EnrollmentRequestCreateSerializer(serializers.ModelSerializer):
+    # student inferred from request.user (so client shouldn't set student)
+    class Meta:
+        model = EnrollmentRequest
+        fields = ('request_id', 'course', 'payment_slip', 'status', 'created_at')
+        read_only_fields = ('status', 'request_id', 'created_at')
+
+    def validate_course(self, value):
+        # Ensure course exists (DRF does that) and student's not already enrolled
+        user = self.context['request'].user
+        if EnrolledCourse.objects.filter(user=user, course=value).exists():
+            raise serializers.ValidationError("You are already enrolled in this course.")
+        # ensure there is not already a pending request for same course
+        if EnrollmentRequest.objects.filter(student=user, course=value, status=EnrollmentRequest.STATUS_PENDING).exists():
+            raise serializers.ValidationError("You already have a pending enrollment request for this course.")
+        return value
+
+    def create(self, validated_data):
+        student = self.context['request'].user
+        validated_data['student'] = student
+        enrollment_request = super().create(validated_data)
+        return enrollment_request
+
+class EnrollmentRequestListSerializer(serializers.ModelSerializer):
+    student_username = serializers.CharField(source='student.username', read_only=True)
+    course_title = serializers.CharField(source='course.title', read_only=True)
+    teacher_name = serializers.CharField(source='course.teacher.full_name', read_only=True)
+
+    class Meta:
+        model = EnrollmentRequest
+        fields = ('request_id', 'student', 'student_username', 'course', 'course_title', 'teacher_name',
+                  'payment_slip', 'status', 'teacher_note', 'reviewed_by', 'created_at', 'updated_at')
+        read_only_fields = ('status', 'teacher_note', 'reviewed_by', 'created_at', 'updated_at')

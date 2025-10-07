@@ -3,7 +3,7 @@ from django.utils.text import slugify
 from userauths.models import User, Profile  # if you use custom user model
 from django.utils import timezone
 from shortuuidfield import ShortUUIDField
-
+from django.db import transaction
 
 language=(("English","English"),("Amharic","Amharic"),("Oromifa","Oromifa"),)
 Level=(("Beginner","Beginner"),("Intermediate","Intermediate"),("Advanced","Advanced"),)
@@ -258,4 +258,64 @@ class country(models.Model):
 
     def __str__(self):
         return self.name
+
+# reuse existing User, Course, Teacher, EnrolledCourse imports you already have
+# from userauths.models import User
+# from .models import Course, Teacher, EnrolledCourse  # these already exist in the file
+
+class EnrollmentRequest(models.Model):
+    STATUS_PENDING = 'pending'
+    STATUS_APPROVED = 'approved'
+    STATUS_REJECTED = 'rejected'
+    STATUS_CHOICES = [
+        (STATUS_PENDING, 'Pending'),
+        (STATUS_APPROVED, 'Approved'),
+        (STATUS_REJECTED, 'Rejected'),
+    ]
+
+    student = models.ForeignKey('userauths.User', on_delete=models.CASCADE, related_name='enrollment_requests')
+    course = models.ForeignKey(Course, on_delete=models.CASCADE, related_name='enrollment_requests')
+    payment_slip = models.ImageField(upload_to='enrollment_slips/')
+    status = models.CharField(max_length=10, choices=STATUS_CHOICES, default=STATUS_PENDING)
+    teacher_note = models.TextField(blank=True, null=True)  # optional note from teacher (reason for rejection etc)
+    reviewed_by = models.ForeignKey(Teacher, on_delete=models.SET_NULL, null=True, blank=True, related_name='reviewed_enrollment_requests')
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    request_id = ShortUUIDField(max_length=20, unique=True, editable=False)
+
+    class Meta:
+        ordering = ['-created_at']
+
+    def __str__(self):
+        return f"{self.student.username} -> {self.course.title} ({self.status})"
+
+    def approve(self, reviewer: Teacher):
+        """
+        Approve this request and create EnrolledCourse if not already enrolled.
+        """
+        if self.status == self.STATUS_APPROVED:
+            return
+
+        with transaction.atomic():
+            # mark approved
+            self.status = self.STATUS_APPROVED
+            self.reviewed_by = reviewer
+            self.updated_at = timezone.now()
+            self.save(update_fields=['status', 'reviewed_by', 'updated_at'])
+
+            # create enrolled course if not exists
+            enrolled, created = EnrolledCourse.objects.get_or_create(
+                user=self.student,
+                course=self.course,
+                defaults={'teacher': self.course.teacher}
+            )
+            return enrolled, created
+
+    def reject(self, reviewer: Teacher, note: str = None):
+        self.status = self.STATUS_REJECTED
+        self.reviewed_by = reviewer
+        if note:
+            self.teacher_note = note
+        self.updated_at = timezone.now()
+        self.save(update_fields=['status', 'reviewed_by', 'teacher_note', 'updated_at'])
 

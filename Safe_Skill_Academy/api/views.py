@@ -1,11 +1,15 @@
-from rest_framework import viewsets, generics, status
+from rest_framework import viewsets, generics, status, permissions
 from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
 from rest_framework_simplejwt.views import TokenObtainPairView
 from userauths.models import User
 import random
 from rest_framework.generics import CreateAPIView
-
+from .models import EnrollmentRequest, Teacher, EnrolledCourse, Course
+from .serializers import EnrollmentRequestCreateSerializer, EnrollmentRequestListSerializer
+from .permissions import IsTeacher, IsOwnerOrTeacher
+from django.shortcuts import get_object_or_404
+from django.db import transaction
 
 from api import serializer as api_serializer
 from .models import (
@@ -219,5 +223,77 @@ class StudentRateCourseUpdateAPIView(generics.RetrieveUpdateAPIView):
         
         user=User.objects.get(user_id=user_id)
         return Review.objects.get(user=user,review_id=review_id)
-        
+
+
+# Student: create enrollment request (multipart/form-data for payment_slip)
+class StudentEnrollmentRequestCreateAPIView(generics.CreateAPIView):
+    serializer_class = EnrollmentRequestCreateSerializer
+    permission_classes = [permissions.IsAuthenticated]
+
+    def perform_create(self, serializer):
+        # student comes from request.user inside serializer.create
+        serializer.save()
+
+# Student: list my enrollment requests
+class StudentEnrollmentRequestListAPIView(generics.ListAPIView):
+    serializer_class = EnrollmentRequestListSerializer
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get_queryset(self):
+        user = self.request.user
+        return EnrollmentRequest.objects.filter(student=user).order_by('-created_at')
+
+# Teacher: list enrollment requests for their courses
+class TeacherEnrollmentRequestListAPIView(generics.ListAPIView):
+    serializer_class = EnrollmentRequestListSerializer
+    permission_classes = [permissions.IsAuthenticated, IsTeacher]
+
+    def get_queryset(self):
+        # find teacher by request.user
+        teacher = get_object_or_404(Teacher, user=self.request.user)
+        # all enrollment requests for courses taught by this teacher
+        return EnrollmentRequest.objects.filter(course__teacher=teacher).order_by('-created_at')
+
+# Teacher: approve or reject
+class TeacherEnrollmentRequestUpdateAPIView(generics.UpdateAPIView):
+    """
+    PATCH body example to approve:
+      { "action": "approve" }
+    to reject:
+      { "action": "reject", "teacher_note": "reason" }
+    """
+    serializer_class = EnrollmentRequestListSerializer
+    permission_classes = [permissions.IsAuthenticated, IsTeacher]
+    lookup_field = 'request_id'
+    queryset = EnrollmentRequest.objects.all()
+
+    def patch(self, request, *args, **kwargs):
+        enrollment_request = self.get_object()
+        teacher = get_object_or_404(Teacher, user=request.user)
+        action = request.data.get('action')
+
+        if action not in ('approve', 'reject'):
+            return Response({"detail": "action must be 'approve' or 'reject'."}, status=status.HTTP_400_BAD_REQUEST)
+
+        if enrollment_request.course.teacher != teacher:
+            return Response({"detail": "You are not allowed to review requests for this course."}, status=status.HTTP_403_FORBIDDEN)
+
+        if action == 'approve':
+            # approve and create enrolled course atomically
+            with transaction.atomic():
+                enrolled, created = enrollment_request.approve(reviewer=teacher)
+                serializer = self.get_serializer(enrollment_request)
+                return Response({
+                    "detail": "Enrollment request approved.",
+                    "enrolled_created": created,
+                    "enrolled_id": getattr(enrolled, 'enrolled_id', None),
+                    "request": serializer.data
+                }, status=status.HTTP_200_OK)
+
+        # reject
+        note = request.data.get('teacher_note', '')
+        enrollment_request.reject(reviewer=teacher, note=note)
+        serializer = self.get_serializer(enrollment_request)
+        return Response({"detail": "Enrollment request rejected.", "request": serializer.data}, status=status.HTTP_200_OK)
+
 

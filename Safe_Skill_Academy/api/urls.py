@@ -2,7 +2,12 @@ from django.urls import path, include
 from rest_framework.routers import DefaultRouter
 from rest_framework_simplejwt.views import TokenRefreshView
 from api import views as api_views
-
+from .views import (
+    StudentEnrollmentRequestCreateAPIView,
+    StudentEnrollmentRequestListAPIView,
+    TeacherEnrollmentRequestListAPIView,
+    TeacherEnrollmentRequestUpdateAPIView,
+)
 # Router for model APIs
 router = DefaultRouter()
 router.register(r'teachers', api_views.TeacherViewSet)
@@ -18,6 +23,7 @@ router.register(r'notes', api_views.NoteViewSet)
 router.register(r'reviews', api_views.ReviewViewSet)
 router.register(r'notifications', api_views.NotificationViewSet)
 router.register(r'countries', api_views.CountryViewSet)
+
 
 urlpatterns = [
     # Auth endpoints
@@ -37,7 +43,12 @@ urlpatterns = [
     path('student/rate-course/', api_views.StudentRateCourseCreateAPIView.as_view(), name='student-course-rate'),
     path('student/review-detail/', api_views.StudentRateCourseUpdateAPIView.as_view(), name='student-course-rate-detail'),
     path('student/wishlist-create/', api_views.StudentWishlistCreateAPIView.as_view(), name='student-wishlist-create'),
+    path('student/enrollment-requests/create/', StudentEnrollmentRequestCreateAPIView.as_view(), name='student-enrollment-request-create'),
+    path('student/enrollment-requests/my/', StudentEnrollmentRequestListAPIView.as_view(), name='student-enrollment-request-list'),
 
- 
+    # Teacher endpoints
+    path('teacher/enrollment-requests/', TeacherEnrollmentRequestListAPIView.as_view(), name='teacher-enrollment-request-list'),
+    path('teacher/enrollment-requests/<str:request_id>/review/', TeacherEnrollmentRequestUpdateAPIView.as_view(), name='teacher-enrollment-request-review'),
+
 
 ]
