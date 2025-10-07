@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from userauths.models import User, Profile
+from user.models import User, Profile
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 from django.contrib.auth.password_validation import validate_password
 from .models import (
@@ -66,11 +66,6 @@ class CategorySerializer(serializers.ModelSerializer):
         model = Category
         fields = '__all__'
 
-'''class CourseSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = Course
-        fields = '__all__'''
-
 class VariantSerializer(serializers.ModelSerializer):
     class Meta:
         model = Variant
@@ -85,6 +80,27 @@ class QuestionAnswerSerializer(serializers.ModelSerializer):
     class Meta:
         model = Question_Answer
         fields = '__all__'
+
+class QuestionAnswerCreateSerializer(serializers.ModelSerializer):
+    teacher = serializers.PrimaryKeyRelatedField(read_only=True)
+
+    class Meta:
+        model = Question_Answer
+        fields = ['id', 'course', 'teacher', 'question', 'answer', 'created_at']
+        read_only_fields = ['teacher', 'created_at']
+
+    def create(self, validated_data):
+        request = self.context.get('request')
+        teacher = Teacher.objects.get(user=request.user)
+        course = validated_data.get('course')
+
+        # ✅ Ensure the teacher owns the course
+        if course.teacher != teacher:
+            raise serializers.ValidationError("You can only add questions to your own courses.")
+
+        validated_data['teacher'] = teacher
+        return super().create(validated_data)
+
 
 class QuestionAnswerMassageSerializer(serializers.ModelSerializer):
     class Meta:

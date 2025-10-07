@@ -2,8 +2,11 @@ from rest_framework import viewsets, generics, status, permissions
 from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
 from rest_framework_simplejwt.views import TokenObtainPairView
-from userauths.models import User
+from user.models import User
 import random
+from .models import Question_Answer
+from .serializer import QuestionAnswerCreateSerializer
+
 from rest_framework.generics import CreateAPIView
 from .models import EnrollmentRequest, Teacher, EnrolledCourse, Course
 from .serializer import EnrollmentRequestCreateSerializer, EnrollmentRequestListSerializer
@@ -464,3 +467,10 @@ class CourseVariantItemDeleteAPIView(generics.DestroyAPIView):
         course=Course.objects.get(teacher=teacher, course_id=course_id)
         variant=Variant.objects.get(course=course, variant_id=variant_id)
         return VariantItem.objects.get(variant=variant, variant_item_id=variant_item_id)
+
+class QuestionAnswerCreateAPIView(generics.CreateAPIView):
+    serializer_class = QuestionAnswerCreateSerializer
+    permission_classes = [permissions.IsAuthenticated]
+
+    def perform_create(self, serializer):
+        serializer.save()

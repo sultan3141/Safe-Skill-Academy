@@ -1,5 +1,5 @@
 from django.contrib import admin
-from userauths.models import User, Profile
+from user.models import User, Profile
 
 class ProfileAdmin(admin.ModelAdmin):
     list_display = ['user', 'full_name', 'date']
