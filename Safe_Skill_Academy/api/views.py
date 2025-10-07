@@ -308,4 +308,51 @@ class TeacherEnrollmentRequestUpdateAPIView(generics.UpdateAPIView):
         serializer = self.get_serializer(enrollment_request)
         return Response({"detail": "Enrollment request rejected.", "request": serializer.data}, status=status.HTTP_200_OK)
 
+class TeacherCourseListAPIView(generics.ListAPIView):
+    serializer_class = CourseSerializer
+    permission_classes=[AllowAny]
+    
+    def get_queryset(self):
+        teacher_id=self.kwargs['teacher_id']
+        teacher=Teacher.objects.get()
+        return Course.objects.filter(teacher=teacher)
+    
+class TeacherReviewListAPIView(generics.ListAPIView):
+    serializer_class = ReviewSerializer
+    permission_classes=[AllowAny]
+    
+    def get_queryset(self):
+        teacher_id=self.kwargs['teacher_id']
+        teacher=Teacher.objects.get(teacher_id=teacher_id)
+        return Review.objects.filter(course__teacher=teacher)
 
+class TeacherReviewDetailAPIView(generics.RetrieveAPIView):
+    serializer_class = ReviewSerializer
+    permission_classes=[AllowAny]
+    
+    def get_object(self):
+        teacher_id=self.kwargs['teacher_id']
+        review_id=self.kwargs['review_id']
+        
+        teacher=Teacher.objects.get(teacher_id=teacher_id)
+        return Review.objects.get(course__teacher=teacher,review_id=review_id)
+    
+class TeacherStudentListAPIView(viewsets.ViewSet):
+    def list(self, request, teacher_id=None):
+        teacher=Teacher.objects.get(teacher_id=teacher_id)
+        enrolled_courses=EnrolledCourse.objects.filter(teacher=teacher)
+        unique_student_ids=set()
+        students=[]
+        for course in enrolled_courses:
+            if course.user_id not in unique_student_ids:
+                user=User.objects.get(user_id=course.user_id)
+                student={
+                    "full_name":user.profile.full_name,
+                    "image":user.profile.image,
+                    "country":user.profile.country,
+                    "data":course.date
+                    }
+                students.append(student)
+                unique_student_ids.add(course.user_id)
+        return Response(students)
+    

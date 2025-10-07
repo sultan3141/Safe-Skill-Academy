@@ -49,6 +49,10 @@ urlpatterns = [
     # Teacher endpoints
     path('teacher/enrollment-requests/', TeacherEnrollmentRequestListAPIView.as_view(), name='teacher-enrollment-request-list'),
     path('teacher/enrollment-requests/<str:request_id>/review/', TeacherEnrollmentRequestUpdateAPIView.as_view(), name='teacher-enrollment-request-review'),
+    path('teacher/course-list/<int:teacher_id>/', api_views.TeacherCourseListAPIView.as_view(), name='teacher-course-list'),
+    path('teacher/review-list/<int:teacher_id>/', api_views.TeacherReviewListAPIView.as_view(), name='teacher-review-list'),
+    path('teacher/review-detail/<int:teacher_id>/<int:review_id>/', api_views.TeacherReviewDetailAPIView.as_view(), name='teacher-review-detail'),
+    path('teacher/student-list/<int:teacher_id>/', api_views.TeacherStudentListAPIView.as_view({'get':'list'}), name='teacher-student-list'), 
 
 
 ]
