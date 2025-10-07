@@ -11,6 +11,8 @@ from .views import (
     CourseRetrieveUpdateDestroyAPIView,
     CourseMaterialListCreateAPIView,
     CourseMaterialDetailAPIView,
+    CourseVariantDeleteAPIView,
+    CourseVariantItemDeleteAPIView,
 )
 # Router for model APIs
 router = DefaultRouter()
@@ -59,6 +61,8 @@ urlpatterns = [
     path('teacher/student-list/<int:teacher_id>/', api_views.TeacherStudentListAPIView.as_view({'get':'list'}), name='teacher-student-list'), 
     path('teacher/courses/create/', CourseCreateAPIView.as_view(), name='teacher-course-create'),
     path('teacher/courses/<int:pk>/', CourseRetrieveUpdateDestroyAPIView.as_view(), name='teacher-course-detail'),
+    path('teacher/variant-delete/<int:teacher_id>/<int:course_id>/<int:variant_id>/', api_views.CourseVariantDeleteAPIView.as_view(), name='course-variant-delete'),
+    path('teacher/variant-item-delete/<int:teacher_id>/<int:course_id>/<int:variant_id>/<int:variant_item_id>/', api_views.CourseVariantItemDeleteAPIView.as_view(), name='course-variant-item-delete'), 
 
      # Course materials (list/create own materials; filter by ?course=<id>)
     path('teacher/materials/', CourseMaterialListCreateAPIView.as_view(), name='teacher-materials-list-create'),

@@ -437,3 +437,30 @@ class CourseMaterialDetailAPIView(generics.RetrieveUpdateDestroyAPIView):
         # keep teacher field unchanged
         serializer.save(teacher=obj.teacher)
 
+class CourseVariantDeleteAPIView(generics.DestroyAPIView):
+    serializer_class = VariantSerializer
+    permission_classes=[AllowAny]
+    
+    def get_object(self):
+        teacher_id=self.kwargs['teacher_id']
+        course_id=self.kwargs['course_id']
+        variant_id=self.kwargs['variant_id']
+        
+        teacher=Teacher.objects.get(teacher_id=teacher_id)
+        course=Course.objects.get(teacher=teacher, course_id=course_id)
+        return Variant.objects.get(course=course, variant_id=variant_id)
+    
+class CourseVariantItemDeleteAPIView(generics.DestroyAPIView):
+    serializer_class = VariantItemSerializer
+    permission_classes=[AllowAny]
+    
+    def get_object(self):
+        teacher_id=self.kwargs['teacher_id']
+        course_id=self.kwargs['course_id']
+        variant_id=self.kwargs['variant_id']
+        variant_item_id=self.kwargs['variant_item_id']
+        
+        teacher=Teacher.objects.get(teacher_id=teacher_id)
+        course=Course.objects.get(teacher=teacher, course_id=course_id)
+        variant=Variant.objects.get(course=course, variant_id=variant_id)
+        return VariantItem.objects.get(variant=variant, variant_item_id=variant_item_id)
