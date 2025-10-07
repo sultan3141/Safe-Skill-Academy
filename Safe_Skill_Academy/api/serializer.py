@@ -8,6 +8,7 @@ from .models import (
     CompletedCourse, EnrolledCourse, Note, Review,
     Notification, country
 )
+from .models import Wishlist
 from .models import EnrollmentRequest
 
 class MyTokenObtainPairSerializer(TokenObtainPairSerializer):
@@ -116,6 +117,14 @@ class CountrySerializer(serializers.ModelSerializer):
     class Meta:
         model = country
         fields = '__all__'
+
+
+class WishlistSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Wishlist
+        fields = "__all__"
+
+
 class EnrolledCourseSerializer(serializers.ModelSerializer):
     lectures = VariantItemSerializer(many=True, read_only=True)
     completed_lectures = VariantItemSerializer(many=True, read_only=True)

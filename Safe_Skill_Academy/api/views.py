@@ -6,7 +6,7 @@ from userauths.models import User
 import random
 from rest_framework.generics import CreateAPIView
 from .models import EnrollmentRequest, Teacher, EnrolledCourse, Course
-from .serializers import EnrollmentRequestCreateSerializer, EnrollmentRequestListSerializer
+from .serializer import EnrollmentRequestCreateSerializer, EnrollmentRequestListSerializer
 from .permissions import IsTeacher, IsOwnerOrTeacher
 from django.shortcuts import get_object_or_404
 from django.db import transaction
@@ -24,6 +24,8 @@ from .serializer import (
     CompletedCourseSerializer, EnrolledCourseSerializer, NoteSerializer, ReviewSerializer,
     NotificationSerializer, CountrySerializer
 )
+from .models import Wishlist
+from .serializer import WishlistSerializer
 
 # -------------------------
 # AUTH & USER MANAGEMENT
@@ -223,6 +225,16 @@ class StudentRateCourseUpdateAPIView(generics.RetrieveUpdateAPIView):
         
         user=User.objects.get(user_id=user_id)
         return Review.objects.get(user=user,review_id=review_id)
+
+
+class StudentWishlistCreateAPIView(generics.CreateAPIView):
+    queryset = Wishlist.objects.all()
+    serializer_class = WishlistSerializer
+    permission_classes = [permissions.IsAuthenticated]
+
+    def perform_create(self, serializer):
+        # Automatically set the user from request
+        serializer.save(user=self.request.user)
 
 
 # Student: create enrollment request (multipart/form-data for payment_slip)
