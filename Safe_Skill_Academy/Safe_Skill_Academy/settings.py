@@ -147,8 +147,8 @@ MEDIA_ROOT=BASE_DIR/'media'
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
 JAZZMIN_SETTINGS = {
-    "site_title": "Library Admin",
-    "welcome_sign": "Welcome to the library",
+    "site_title": "Safe Skill Academy",
+    "welcome_sign": "Welcome to the Safe Skill Academy",
     "show_ui_builder": True,
     }
 

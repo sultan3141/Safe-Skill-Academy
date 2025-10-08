@@ -3,7 +3,7 @@ from .models import (
     Teacher, Category, Course, Variant, VariantItem,
     Question_Answer, Question_Answer_Massage,
     CompletedCourse, EnrolledCourse, Note, Review,
-    Notification, country
+    Notification, country,CourseMaterial
 )
 
 @admin.register(Teacher)
@@ -80,3 +80,11 @@ class CountryAdmin(admin.ModelAdmin):
     list_display = ['name', 'active']
     search_fields = ['name']
     list_filter = ['active']
+
+@admin.register(CourseMaterial)
+class CourseMaterialAdmin(admin.ModelAdmin):
+    list_display = ['title', 'course', 'teacher', 'created_at', 'updated_at']
+    search_fields = ['title', 'course__title', 'teacher__full_name']
+    list_filter = ['created_at', 'teacher']
+    readonly_fields = ['material_id', 'created_at', 'updated_at']
+
