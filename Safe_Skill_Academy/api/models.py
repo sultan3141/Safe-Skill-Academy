@@ -1,6 +1,6 @@
 from django.db import models
 from django.utils.text import slugify
-from user.models import User, Profile  # if you use custom user model
+from users.models import User, Profile  # if you use custom user model
 from django.utils import timezone
 from shortuuidfield import ShortUUIDField
 from django.db import transaction
@@ -24,9 +24,6 @@ class Teacher(models.Model):  # example model
 
     def __str__(self):
         return self.full_name
-
-    def students(self):
-      return CartOrderItem.objects.filter(teacher=self)
     def courses(self):
       return Course.objects.filter(teacher=self)
     def reviews(self):
@@ -301,7 +298,7 @@ class EnrollmentRequest(models.Model):
         (STATUS_REJECTED, 'Rejected'),
     ]
 
-    student = models.ForeignKey('user.User', on_delete=models.CASCADE, related_name='enrollment_requests')
+    student = models.ForeignKey('users.User', on_delete=models.CASCADE, related_name='enrollment_requests')
     course = models.ForeignKey(Course, on_delete=models.CASCADE, related_name='enrollment_requests')
     payment_slip = models.ImageField(upload_to='enrollment_slips/')
     status = models.CharField(max_length=10, choices=STATUS_CHOICES, default=STATUS_PENDING)

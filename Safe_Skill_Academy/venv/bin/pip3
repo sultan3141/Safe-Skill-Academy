@@ -1,4 +1,4 @@
-#!/workspaces/Safe-Skill-Academy/Safe_Skill_Academy/venv/bin/python
+#!/workspaces/Safe-Skill-Academy/Safe_Skill_Academy/venv/bin/python3
 # -*- coding: utf-8 -*-
 import re
 import sys

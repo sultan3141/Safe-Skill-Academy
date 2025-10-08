@@ -2,7 +2,7 @@ from rest_framework import viewsets, generics, status, permissions
 from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
 from rest_framework_simplejwt.views import TokenObtainPairView
-from user.models import User
+from users.models import User
 import random
 from .models import Question_Answer
 from .serializer import QuestionAnswerCreateSerializer

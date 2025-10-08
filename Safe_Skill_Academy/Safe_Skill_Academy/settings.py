@@ -31,7 +31,7 @@ DEBUG = True
 
 ALLOWED_HOSTS = []
 
-AUTH_USER_MODEL = "user.User"
+AUTH_USER_MODEL = "users.User"
 
 
 #installed app
@@ -46,7 +46,7 @@ INSTALLED_APPS = [
     "django.contrib.staticfiles",
    
    #apps
-    "user",
+    "users",
     "api",
 
     #third parthy app
