@@ -357,25 +357,6 @@ class Quiz(models.Model):
         return f"{self.title} ({self.course.title})"
 
 
-'''class QuizQuestion(models.Model):
-    quiz = models.ForeignKey(Quiz, on_delete=models.CASCADE, related_name='quiz_questions')
-    question_text = models.TextField()
-    created_at = models.DateTimeField(auto_now_add=True)
-
-    def __str__(self):
-        return self.question_text
-
-
-class QuizAnswer(models.Model):
-    question = models.ForeignKey(QuizQuestion, on_delete=models.CASCADE, related_name='quiz_answers')
-    answer_text = models.CharField(max_length=255)
-    is_correct = models.BooleanField(default=False)
-
-    def __str__(self):
-        return f"{self.answer_text} ({'correct' if self.is_correct else 'wrong'})"
-
-# models.py (append)
-'''
 class QuizQuestion(models.Model):
     QUESTION_TYPES = (
         ('MCQ', 'Multiple Choice'),
