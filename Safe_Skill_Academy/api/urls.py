@@ -2,7 +2,11 @@ from django.urls import path, include
 from rest_framework.routers import DefaultRouter
 from rest_framework_simplejwt.views import TokenRefreshView
 from api import views as api_views
+from django.urls import path 
 from .views import (
+    StudentQuizListAPIView,
+    StudentSubmitQuizAPIView, 
+    StudentQuizResultAPIView,
     StudentEnrollmentRequestCreateAPIView,
     StudentEnrollmentRequestListAPIView,
     TeacherEnrollmentRequestListAPIView,
@@ -13,6 +17,9 @@ from .views import (
     CourseMaterialDetailAPIView,
     CourseVariantDeleteAPIView,
     CourseVariantItemDeleteAPIView,
+    TeacherQuizDetailAPIView,
+    TeacherQuizQuestionListCreateAPIView,
+    TeacherQuizAnswerListCreateAPIView
 )
 # Router for model APIs
 router = DefaultRouter()
@@ -51,6 +58,9 @@ urlpatterns = [
     path('student/wishlist-create/', api_views.StudentWishlistCreateAPIView.as_view(), name='student-wishlist-create'),
     path('student/enrollment-requests/create/', StudentEnrollmentRequestCreateAPIView.as_view(), name='student-enrollment-request-create'),
     path('student/enrollment-requests/my/', StudentEnrollmentRequestListAPIView.as_view(), name='student-enrollment-request-list'),
+    path('student/quiz-list/<int:course_id>/', StudentQuizListAPIView.as_view(), name='student_quiz_list'),
+    path('student/quiz/<uuid:quiz_id>/submit/', StudentSubmitQuizAPIView.as_view(), name='student_quiz_submit'),
+    path('student/quiz-result/<int:student_id>/<uuid:attempt_id>/', StudentQuizResultAPIView.as_view(), name='student_quiz_result'),
 
     # Teacher endpoints
     path('teacher/enrollment-requests/', TeacherEnrollmentRequestListAPIView.as_view(), name='teacher-enrollment-request-list'),
@@ -63,8 +73,10 @@ urlpatterns = [
     path('teacher/courses/<int:pk>/', CourseRetrieveUpdateDestroyAPIView.as_view(), name='teacher-course-detail'),
     path('teacher/variant-delete/<int:teacher_id>/<int:course_id>/<int:variant_id>/', api_views.CourseVariantDeleteAPIView.as_view(), name='course-variant-delete'),
     path('teacher/variant-item-delete/<int:teacher_id>/<int:course_id>/<int:variant_id>/<int:variant_item_id>/', api_views.CourseVariantItemDeleteAPIView.as_view(), name='course-variant-item-delete'), 
-
-     # Course materials (list/create own materials; filter by ?course=<id>)
+    path('teacher/quizzes/', api_views.TeacherQuizListCreateAPIView.as_view(), name='teacher-quizzes'),
+    path('teacher/quizzes/<uuid:quiz_id>/', api_views.TeacherQuizDetailAPIView.as_view(), name='teacher-quiz-detail'),
+    path('teacher/quizzes/<uuid:quiz_id>/questions/', api_views.TeacherQuizQuestionListCreateAPIView.as_view(), name='teacher-quiz-questions'),
+    path('teacher/quizzes/<uuid:quiz_id>/questions/<int:question_id>/answers/', api_views.TeacherQuizAnswerListCreateAPIView.as_view(), name='teacher-quiz-answers'),
     path('teacher/materials/', CourseMaterialListCreateAPIView.as_view(), name='teacher-materials-list-create'),
     path('teacher/materials/<str:material_id>/', CourseMaterialDetailAPIView.as_view(), name='teacher-materials-detail'),
 

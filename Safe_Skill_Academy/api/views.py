@@ -1,15 +1,17 @@
 from rest_framework import viewsets, generics, status, permissions
-from rest_framework.permissions import AllowAny
+from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework_simplejwt.views import TokenObtainPairView
 from users.models import User
 import random
-from .models import Question_Answer
-from .serializer import QuestionAnswerCreateSerializer
-
+from rest_framework.exceptions import ValidationError
+from .models import Quiz, QuizQuestion, QuizAnswer 
+from rest_framework import generics
+from .models import Quiz, StudentQuizAttempt
+from .serializer import QuizSerializer, StudentQuizAttemptSerializer
+from rest_framework.permissions import IsAuthenticated
 from rest_framework.generics import CreateAPIView
-from .models import EnrollmentRequest, Teacher, EnrolledCourse, Course
-from .serializer import EnrollmentRequestCreateSerializer, EnrollmentRequestListSerializer
+
 from .permissions import IsTeacher, IsOwnerOrTeacher
 from django.shortcuts import get_object_or_404
 from django.db import transaction
@@ -17,24 +19,18 @@ from rest_framework import generics, permissions, status
 from django.shortcuts import get_object_or_404
 from rest_framework.exceptions import PermissionDenied
 
-from .models import CourseMaterial, Teacher
-from .serializer import CourseCreateUpdateSerializer, CourseMaterialSerializer, CourseSerializer
 from .permissions import IsTeacherOrAdmin, IsCourseOwnerOrAdmin
 from api import serializer as api_serializer
 from .models import (
-    Teacher, Category, Course, Variant, VariantItem,
-    Question_Answer, Question_Answer_Massage,
-    CompletedCourse, EnrolledCourse, Note, Review,
-    Notification, country
+    Teacher, Category, Wishlist, CourseMaterial, EnrollmentRequest,  Course,  Variant, VariantItem,
+    Question_Answer, Question_Answer_Massage, CompletedCourse, EnrolledCourse, Note, Review, Notification, country,
 )
 from .serializer import (
-    TeacherSerializer, CategorySerializer, CourseSerializer, VariantSerializer, VariantItemSerializer,
-    QuestionAnswerSerializer, RateCourseSerializer, QuestionAnswerMassageSerializer,
-    CompletedCourseSerializer, EnrolledCourseSerializer, NoteSerializer, ReviewSerializer,
-    NotificationSerializer, CountrySerializer
+    TeacherSerializer, CategorySerializer, CourseSerializer, QuizSerializer, QuizQuestionSerializer, QuizAnswerSerializer, CourseCreateUpdateSerializer, CourseMaterialSerializer, CourseSerializer, VariantSerializer, VariantItemSerializer,
+    QuestionAnswerSerializer, RateCourseSerializer, QuestionAnswerMassageSerializer,QuestionAnswerCreateSerializer,
+    CompletedCourseSerializer, EnrolledCourseSerializer, EnrollmentRequestCreateSerializer, EnrollmentRequestListSerializer, NoteSerializer, ReviewSerializer,
+    NotificationSerializer, CountrySerializer,WishlistSerializer
 )
-from .models import Wishlist
-from .serializer import WishlistSerializer
 
 # -------------------------
 # AUTH & USER MANAGEMENT
@@ -474,3 +470,100 @@ class QuestionAnswerCreateAPIView(generics.CreateAPIView):
 
     def perform_create(self, serializer):
         serializer.save()
+
+
+
+# Create Quiz
+class TeacherQuizListCreateAPIView(generics.ListCreateAPIView):
+    queryset = Quiz.objects.all().order_by('-created_at')
+    serializer_class = QuizSerializer
+    permission_classes = [IsAuthenticated]
+
+    def get_queryset(self):
+        teacher = Teacher.objects.get(user=self.request.user)
+        return Quiz.objects.filter(teacher=teacher)
+
+    def perform_create(self, serializer):
+        teacher = Teacher.objects.get(user=self.request.user)
+        course = serializer.validated_data['course']
+        if course.teacher != teacher:
+            raise ValidationError("You can only create quizzes for your own courses.")
+        serializer.save(teacher=teacher)
+
+
+# Quiz Detail
+class TeacherQuizDetailAPIView(generics.RetrieveUpdateDestroyAPIView):
+    queryset = Quiz.objects.all()
+    serializer_class = QuizSerializer
+    permission_classes = [IsAuthenticated]
+    lookup_field = 'quiz_id'
+
+    def perform_update(self, serializer):
+        teacher = Teacher.objects.get(user=self.request.user)
+        if serializer.instance.teacher != teacher:
+            raise ValidationError("You can only update your own quiz.")
+        serializer.save()
+
+
+# Add questions to quiz
+class TeacherQuizQuestionListCreateAPIView(generics.ListCreateAPIView):
+    serializer_class = QuizQuestionSerializer
+    permission_classes = [IsAuthenticated]
+
+    def get_queryset(self):
+        quiz_id = self.kwargs['quiz_id']
+        return QuizQuestion.objects.filter(quiz__quiz_id=quiz_id)
+
+    def perform_create(self, serializer):
+        quiz_id = self.kwargs['quiz_id']
+        quiz = Quiz.objects.get(quiz_id=quiz_id)
+        teacher = Teacher.objects.get(user=self.request.user)
+        if quiz.teacher != teacher:
+            raise ValidationError("You can only add questions to your own quiz.")
+        serializer.save(quiz=quiz)
+
+
+# Add answers to a question
+class TeacherQuizAnswerListCreateAPIView(generics.ListCreateAPIView):
+    serializer_class = QuizAnswerSerializer
+    permission_classes = [IsAuthenticated]
+
+    def get_queryset(self):
+        question_id = self.kwargs['question_id']
+        return QuizAnswer.objects.filter(question_id=question_id)
+
+    def perform_create(self, serializer):
+        question_id = self.kwargs['question_id']
+        question = QuizQuestion.objects.get(id=question_id)
+        teacher = Teacher.objects.get(user=self.request.user)
+        if question.quiz.teacher != teacher:
+            raise ValidationError("You can only add answers to your own quiz questions.")
+        serializer.save(question=question)
+
+
+
+class StudentQuizListAPIView(generics.ListAPIView):
+    serializer_class = QuizSerializer
+    permission_classes = [IsAuthenticated]
+
+    def get_queryset(self):
+        course_id = self.kwargs['course_id']
+        return Quiz.objects.filter(course_id=course_id)
+
+
+class StudentSubmitQuizAPIView(generics.CreateAPIView):
+    serializer_class = StudentQuizAttemptSerializer
+    permission_classes = [IsAuthenticated]
+
+    def perform_create(self, serializer):
+        serializer.save(student=self.request.user)
+
+
+class StudentQuizResultAPIView(generics.RetrieveAPIView):
+    serializer_class = StudentQuizAttemptSerializer
+    permission_classes = [IsAuthenticated]
+
+    def get_object(self):
+        student_id = self.kwargs['student_id']
+        attempt_id = self.kwargs['attempt_id']
+        return StudentQuizAttempt.objects.get(student_id=student_id, attempt_id=attempt_id)

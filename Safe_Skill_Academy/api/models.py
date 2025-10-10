@@ -5,6 +5,7 @@ from django.utils import timezone
 from shortuuidfield import ShortUUIDField
 from django.db import transaction
 from django.core.exceptions import ValidationError
+import uuid
 
 language=(("English","English"),("Amharic","Amharic"),("Oromifa","Oromifa"),)
 Level=(("Beginner","Beginner"),("Intermediate","Intermediate"),("Advanced","Advanced"),)
@@ -344,3 +345,53 @@ class EnrollmentRequest(models.Model):
         self.updated_at = timezone.now()
         self.save(update_fields=['status', 'reviewed_by', 'teacher_note', 'updated_at'])
 
+class Quiz(models.Model):
+    quiz_id = models.UUIDField(default=uuid.uuid4, editable=False, unique=True)
+    teacher = models.ForeignKey(Teacher, on_delete=models.CASCADE, related_name='teacher_quizzes')
+    course = models.ForeignKey(Course, on_delete=models.CASCADE, related_name='course_quizzes')
+    title = models.CharField(max_length=255)
+    description = models.TextField(blank=True, null=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"{self.title} ({self.course.title})"
+
+
+class QuizQuestion(models.Model):
+    quiz = models.ForeignKey(Quiz, on_delete=models.CASCADE, related_name='quiz_questions')
+    question_text = models.TextField()
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return self.question_text
+
+
+class QuizAnswer(models.Model):
+    question = models.ForeignKey(QuizQuestion, on_delete=models.CASCADE, related_name='quiz_answers')
+    answer_text = models.CharField(max_length=255)
+    is_correct = models.BooleanField(default=False)
+
+    def __str__(self):
+        return f"{self.answer_text} ({'correct' if self.is_correct else 'wrong'})"
+
+# models.py (append)
+
+
+class StudentQuizAttempt(models.Model):
+    attempt_id = models.UUIDField(default=uuid.uuid4, editable=False, unique=True)
+    student = models.ForeignKey(User, on_delete=models.CASCADE, related_name='quiz_attempts')
+    quiz = models.ForeignKey(Quiz, on_delete=models.CASCADE, related_name='attempts')
+    score = models.FloatField(default=0)
+    submitted_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"{self.student.username} - {self.quiz.title} - {self.score}"
+
+
+class StudentQuizAnswer(models.Model):
+    attempt = models.ForeignKey(StudentQuizAttempt, on_delete=models.CASCADE, related_name='answers')
+    question = models.ForeignKey(QuizQuestion, on_delete=models.CASCADE)
+    selected_answer = models.ForeignKey(QuizAnswer, on_delete=models.CASCADE)
+
+    def __str__(self):
+        return f"{self.attempt.student.username} - {self.question.question_text}"

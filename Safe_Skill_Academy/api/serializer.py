@@ -2,14 +2,13 @@ from rest_framework import serializers
 from users.models import User, Profile
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 from django.contrib.auth.password_validation import validate_password
+from rest_framework import serializers
 from .models import (
-    Teacher, Category, Course, Variant, VariantItem,
-    Question_Answer, CourseRating, Question_Answer_Massage,
+    Teacher, Category, Course, Variant, CourseMaterial, VariantItem,
+    Question_Answer, CourseRating, Question_Answer_Massage,Quiz, QuizQuestion, QuizAnswer, StudentQuizAttempt, StudentQuizAnswer,
     CompletedCourse, EnrolledCourse, Note, Review,
-    Notification, country
+    Notification, country, Wishlist, EnrollmentRequest
 )
-from .models import Wishlist
-from .models import EnrollmentRequest
 
 class MyTokenObtainPairSerializer(TokenObtainPairSerializer):
     @classmethod
@@ -233,8 +232,7 @@ class EnrollmentRequestListSerializer(serializers.ModelSerializer):
 
 # api/serializers.py (append)
 
-from rest_framework import serializers
-from .models import Course, CourseMaterial, Teacher, Category
+
 
 class CourseCreateUpdateSerializer(serializers.ModelSerializer):
     # teacher is read-only: set in view from request.user -> Teacher
@@ -287,4 +285,77 @@ class CourseMaterialSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError("You can only add materials to your own courses.")
         validated_data['teacher'] = teacher
         return super().create(validated_data)
+
+
+class QuizAnswerSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = QuizAnswer
+        fields = '__all__'
+
+
+class QuizQuestionSerializer(serializers.ModelSerializer):
+    answers = QuizAnswerSerializer(many=True, read_only=True, source='quiz_answers')
+
+    class Meta:
+        model = QuizQuestion
+        fields = '__all__'
+
+
+class QuizSerializer(serializers.ModelSerializer):
+    questions = QuizQuestionSerializer(many=True, read_only=True, source='quiz_questions')
+
+    class Meta:
+        model = Quiz
+        fields = '__all__'
+
+
+class QuizQuestionAnswerSerializer(serializers.ModelSerializer):
+    answers = serializers.SerializerMethodField()
+
+    class Meta:
+        model = QuizQuestion
+        fields = ['id', 'question_text', 'answers']
+
+    def get_answers(self, obj):
+        return [{'id': ans.id, 'answer_text': ans.answer_text} for ans in obj.quiz_answers.all()]
+
+
+class QuizSerializer(serializers.ModelSerializer):
+    questions = QuizQuestionAnswerSerializer(many=True, read_only=True, source='quiz_questions')
+
+    class Meta:
+        model = Quiz
+        fields = ['quiz_id', 'title', 'description', 'questions']
+
+
+class StudentQuizAnswerSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = StudentQuizAnswer
+        fields = ['question', 'selected_answer']
+
+
+class StudentQuizAttemptSerializer(serializers.ModelSerializer):
+    answers = StudentQuizAnswerSerializer(many=True)
+
+    class Meta:
+        model = StudentQuizAttempt
+        fields = ['quiz', 'score', 'answers']
+
+    def create(self, validated_data):
+        answers_data = validated_data.pop('answers')
+        attempt = StudentQuizAttempt.objects.create(**validated_data)
+
+        correct_count = 0
+        for answer_data in answers_data:
+            question = answer_data['question']
+            selected_answer = answer_data['selected_answer']
+            StudentQuizAnswer.objects.create(attempt=attempt, question=question, selected_answer=selected_answer)
+            if selected_answer.is_correct:
+                correct_count += 1
+
+        # calculate score as percentage
+        total_questions = len(answers_data)
+        attempt.score = (correct_count / total_questions) * 100
+        attempt.save()
+        return attempt
 

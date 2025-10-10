@@ -3,8 +3,9 @@ from .models import (
     Teacher, Category, Course, Variant, VariantItem,
     Question_Answer, Question_Answer_Massage,
     CompletedCourse, EnrolledCourse, Note, Review,
-    Notification, country,CourseMaterial
+    Notification, country,CourseMaterial, Quiz, QuizQuestion, QuizAnswer, StudentQuizAttempt, StudentQuizAnswer
 )
+
 
 @admin.register(Teacher)
 class TeacherAdmin(admin.ModelAdmin):
@@ -88,3 +89,39 @@ class CourseMaterialAdmin(admin.ModelAdmin):
     list_filter = ['created_at', 'teacher']
     readonly_fields = ['material_id', 'created_at', 'updated_at']
 
+
+class QuizAnswerInline(admin.TabularInline):
+    model = QuizAnswer
+    extra = 1
+
+class QuizQuestionInline(admin.TabularInline):
+    model = QuizQuestion
+    extra = 1
+
+@admin.register(Quiz)
+class QuizAdmin(admin.ModelAdmin):
+    list_display = ('title', 'course', 'teacher', 'created_at')
+    inlines = [QuizQuestionInline]
+
+@admin.register(QuizQuestion)
+class QuizQuestionAdmin(admin.ModelAdmin):
+    list_display = ('question_text', 'quiz', 'created_at')
+    inlines = [QuizAnswerInline]
+
+@admin.register(QuizAnswer)
+class QuizAnswerAdmin(admin.ModelAdmin):
+    list_display = ('answer_text', 'question', 'is_correct')
+
+# Student quiz attempts
+class StudentQuizAnswerInline(admin.TabularInline):
+    model = StudentQuizAnswer
+    extra = 0
+
+@admin.register(StudentQuizAttempt)
+class StudentQuizAttemptAdmin(admin.ModelAdmin):
+    list_display = ('student', 'quiz', 'score', 'submitted_at')
+    inlines = [StudentQuizAnswerInline]
+
+@admin.register(StudentQuizAnswer)
+class StudentQuizAnswerAdmin(admin.ModelAdmin):
+    list_display = ('attempt', 'question', 'selected_answer')
