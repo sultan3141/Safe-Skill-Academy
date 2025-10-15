@@ -3,6 +3,7 @@ from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework_simplejwt.views import TokenObtainPairView
 from users.models import User
+from rest_framework.parsers import MultiPartParser, FormParser
 import random
 from rest_framework.exceptions import ValidationError
 from .models import Quiz, QuizQuestion, QuizAnswer 
@@ -401,6 +402,7 @@ class CourseRetrieveUpdateDestroyAPIView(generics.RetrieveUpdateDestroyAPIView):
 class CourseMaterialListCreateAPIView(generics.ListCreateAPIView):
     serializer_class = CourseMaterialSerializer
     permission_classes = [permissions.IsAuthenticated, IsTeacherOrAdmin]
+    parser_classes = [MultiPartParser, FormParser]
 
     def get_queryset(self):
         qs = CourseMaterial.objects.all().select_related('course', 'teacher')

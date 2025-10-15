@@ -3,6 +3,8 @@ from users.models import User, Profile
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 from django.contrib.auth.password_validation import validate_password
 from rest_framework import serializers
+from rest_framework import viewsets
+
 from .models import (
     Teacher, Category, Course, Variant, CourseMaterial, VariantItem,
     Question_Answer, CourseRating, Question_Answer_Massage,Quiz, QuizQuestion, QuizAnswer, StudentQuizAttempt, StudentQuizAnswer,
@@ -159,6 +161,7 @@ class EnrolledCourseSerializer(serializers.ModelSerializer):
           self.Meta.depth=0
         else:
           self.Meta.depth=1
+
 class CourseSerializer(serializers.ModelSerializer):
     teacher = TeacherSerializer(read_only=True)
     category = CategorySerializer(read_only=True)
@@ -258,8 +261,10 @@ class CourseSerializer(serializers.ModelSerializer):
         read_only_fields = ('course_id', 'slug', 'date')
 
 class CourseMaterialSerializer(serializers.ModelSerializer):
-    teacher = serializers.PrimaryKeyRelatedField(read_only=True)
-    course_title = serializers.CharField(source='course.title', read_only=True)
+    #teacher = serializers.PrimaryKeyRelatedField(read_only=True)
+    #course_title = serializers.CharField(source='course.title', read_only=True)
+    teacher = serializers.ReadOnlyField(source="teacher.id")
+    course_title = serializers.ReadOnlyField(source="course.title")
 
     class Meta:
         model = CourseMaterial
