@@ -119,7 +119,7 @@ The project uses **JWT (JSON Web Token)** for secure user authentication.
 ## 🌐 Deployment
 
 Deployed on **Render**:  
-🔗 [https://safe-skill-academy.onrender.com](https://safe-skill-academy.onrender.com)
+🔗 [https://safe-skill-academy.onrender.com](https://safe-skill-academy.onrender.com/api/)
 
 Example:
 - Swagger UI → `/`  
