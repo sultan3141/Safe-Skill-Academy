@@ -74,7 +74,7 @@ class Course(models.Model):
     def save(self, *args, **kwargs):
         if self.slug =='' or self.slug == None:
             self.slug = slugify(self.title)
-        super(Category,self).save(*args, **kwargs)
+        super().save(*args, **kwargs)
     def students(self):
       return EnrolledCourse.objects.filter(course=self)
 
