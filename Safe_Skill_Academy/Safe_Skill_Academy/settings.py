@@ -57,6 +57,17 @@ INSTALLED_APPS = [
     "drf_yasg"
 ]
 
+# REST Framework
+REST_FRAMEWORK = {
+    "DEFAULT_AUTHENTICATION_CLASSES": (
+        "rest_framework_simplejwt.authentication.JWTAuthentication",
+    ),
+    # optional default permission
+    "DEFAULT_PERMISSION_CLASSES": (
+        "rest_framework.permissions.IsAuthenticatedOrReadOnly",
+    ),
+}
+
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
     "whitenoise.middleware.WhiteNoiseMiddleware",
@@ -198,4 +209,18 @@ SIMPLE_JWT = {
     "SLIDING_TOKEN_REFRESH_LIFETIME": timedelta(days=1),
 }
 
+# Install django-cors-headers if you haven't: pip install django-cors-headers
+CORS_ALLOWED_ORIGINS = [
+    "http://localhost:3000",
+    "http://127.0.0.1:3000",
+]
 
+# If you need credentials (cookies / session), enable this:
+CORS_ALLOW_CREDENTIALS = True
+
+# If you're testing from different hostnames/ports, add them here.
+# For quick local debugging only you can allow all origins (NOT for production):
+# CORS_ALLOW_ALL_ORIGINS = True
+
+# If using whitenoise and older settings style:
+STATICFILES_STORAGE = "whitenoise.storage.CompressedManifestStaticFilesStorage"
